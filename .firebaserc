@@ -1,0 +1,14 @@
+{
+  "projects": {
+    "default": "bizflow-9983e"
+  },
+  "targets": {
+    "bizflow-9983e": {
+      "hosting": {
+        "website": [
+          "usebizflow-website"
+        ]
+      }
+    }
+  }
+}
