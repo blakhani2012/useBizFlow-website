@@ -114,13 +114,13 @@ export default function Home() {
                 everything your growing business needs, beautifully integrated in one platform.
               </p>
               <div className="mt-8 flex flex-col sm:flex-row gap-4">
-                <Link
-                  href="/contact"
+                <a
+                  href="https://app.usebizflow.com"
                   className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-8 py-3.5 text-base font-semibold text-white shadow-lg shadow-primary/25 hover:bg-primary-dark transition-all hover:shadow-xl hover:shadow-primary/30"
                 >
                   Start Free Trial
                   <ArrowRight className="h-4 w-4" />
-                </Link>
+                </a>
                 <Link
                   href="/features"
                   className="inline-flex items-center justify-center gap-2 rounded-full border border-slate-300 px-8 py-3.5 text-base font-semibold text-foreground hover:bg-surface transition-colors"
@@ -405,13 +405,13 @@ export default function Home() {
               Start with our free tier — no credit card required.
             </p>
             <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
-              <Link
-                href="/contact"
+              <a
+                href="https://app.usebizflow.com"
                 className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-8 py-3.5 text-base font-semibold text-primary shadow-lg hover:bg-blue-50 transition-colors"
               >
                 Get Started Free
                 <ArrowRight className="h-4 w-4" />
-              </Link>
+              </a>
               <Link
                 href="/contact"
                 className="inline-flex items-center justify-center gap-2 rounded-full border-2 border-white/30 px-8 py-3.5 text-base font-semibold text-white hover:bg-white/10 transition-colors"

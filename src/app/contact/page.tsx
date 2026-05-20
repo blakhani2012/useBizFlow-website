@@ -67,7 +67,7 @@ export default function ContactPage() {
                         Email
                       </div>
                       <div className="text-sm text-muted">
-                        hello@bizflow.app
+                        hello@usebizflow.com
                       </div>
                     </div>
                   </div>

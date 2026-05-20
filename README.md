@@ -1,36 +1,99 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# BizFlow Marketing Website
 
-## Getting Started
+Marketing website for **BizFlow** — the all-in-one business management platform.
 
-First, run the development server:
+## Tech Stack
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- **Next.js 16** (App Router) + TypeScript
+- **Tailwind CSS v4**
+- **Framer Motion** — scroll-triggered animations
+- **Lucide React** — icons
+- Deployed on **Vercel** (planned)
+
+## Pages
+
+| Route | Description |
+|-------|-------------|
+| `/` | Homepage — hero, modules showcase, highlights, testimonials, CTA |
+| `/features` | Detailed breakdown of all 6 modules (CRM, Inventory, Sales, Purchases, Manufacturing, More) |
+| `/pricing` | Free / Pro / Business tiers with FAQ |
+| `/contact` | Contact form + company info |
+| `/about` | Company story, timeline, core values |
+
+## Domain Architecture
+
+```
+usebizflow.com              → Marketing website (this repo, Vercel)
+app.usebizflow.com          → BizFlow Flutter app (Firebase Hosting)
+*.usebizflow.com (email)    → Google Workspace
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### DNS Records (BigRock)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Type | Host | Value | Purpose |
+|------|------|-------|---------|
+| CNAME | `app` | `bizflow-9983e.web.app` | Flutter app on Firebase Hosting |
+| CNAME | `www` | `cname.vercel-dns.com` | Marketing site (add when deploying to Vercel) |
+| A | `@` | `76.76.21.21` | Marketing site root (add when deploying to Vercel) |
+| MX | `@` | *(Google Workspace)* | Email — configured by BigRock |
+| CNAME | `fudxogqab75i` | `gv-odxxwna46yiqg4.dv.googlehosted.com` | Google Workspace domain verification |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+> **Note:** Vercel DNS records (A and www CNAME) should only be added after deploying to Vercel.
 
-## Learn More
+### Firebase Hosting Setup
 
-To learn more about Next.js, take a look at the following resources:
+- **Project:** `bizflow-9983e`
+- **Custom domain:** `app.usebizflow.com` (pending SSL provisioning)
+- **Default URL:** `bizflow-9983e.web.app` (still works)
+- **Status:** CNAME record added, waiting for Firebase to verify and provision SSL certificate (can take up to 24 hours)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Google Workspace
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- **Registrar:** BigRock
+- **Domain:** `usebizflow.com`
+- **Email:** `hello@usebizflow.com`, `bhavesh@usebizflow.com`
 
-## Deploy on Vercel
+## Development
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+npm install
+npm run dev
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Open [http://localhost:3000](http://localhost:3000).
+
+## Build
+
+```bash
+npm run build
+```
+
+## Deployment (Vercel)
+
+1. Import this repo on [vercel.com](https://vercel.com)
+2. Vercel auto-detects Next.js and deploys
+3. Add custom domain `usebizflow.com` in Vercel dashboard
+4. Add A record (`@` → `76.76.21.21`) and CNAME (`www` → `cname.vercel-dns.com`) in BigRock DNS
+5. Vercel provisions SSL automatically
+
+## Project Structure
+
+```
+src/
+├── app/
+│   ├── layout.tsx          # Root layout with Navbar + Footer
+│   ├── page.tsx            # Homepage
+│   ├── globals.css         # Global styles + Tailwind theme
+│   ├── features/page.tsx   # Features page
+│   ├── pricing/page.tsx    # Pricing page
+│   ├── contact/page.tsx    # Contact page
+│   └── about/page.tsx      # About page
+└── components/
+    ├── Navbar.tsx           # Responsive navbar with mobile menu
+    ├── Footer.tsx           # Footer with links
+    └── AnimatedSection.tsx  # Framer Motion scroll animation wrapper
+```
+
+## Related Repositories
+
+- **BizFlow App** (Flutter + Firebase): Main SaaS application deployed at `app.usebizflow.com`

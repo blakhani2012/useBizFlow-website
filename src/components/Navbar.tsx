@@ -46,12 +46,12 @@ export default function Navbar() {
             >
               Book a Demo
             </Link>
-            <Link
-              href="/contact"
+            <a
+              href="https://app.usebizflow.com"
               className="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-dark transition-colors"
             >
               Get Started Free
-            </Link>
+            </a>
           </div>
 
           <button
@@ -76,13 +76,13 @@ export default function Navbar() {
                   {item.name}
                 </Link>
               ))}
-              <Link
-                href="/contact"
+              <a
+                href="https://app.usebizflow.com"
                 className="mt-2 block rounded-full bg-primary px-5 py-2.5 text-center text-sm font-semibold text-white shadow-sm hover:bg-primary-dark transition-colors"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Get Started Free
-              </Link>
+              </a>
             </div>
           </div>
         )}

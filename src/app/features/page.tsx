@@ -322,12 +322,12 @@ export default function FeaturesPage() {
               Start your free trial today or book a personalized demo.
             </p>
             <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
-              <Link
-                href="/contact"
+              <a
+                href="https://app.usebizflow.com"
                 className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-8 py-3 text-base font-semibold text-primary hover:bg-blue-50 transition-colors"
               >
                 Start Free Trial <ArrowRight className="h-4 w-4" />
-              </Link>
+              </a>
               <Link
                 href="/pricing"
                 className="inline-flex items-center justify-center gap-2 rounded-full border-2 border-white/30 px-8 py-3 text-base font-semibold text-white hover:bg-white/10 transition-colors"

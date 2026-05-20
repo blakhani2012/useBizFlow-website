@@ -181,8 +181,8 @@ export default function PricingPage() {
                     ))}
                   </ul>
 
-                  <Link
-                    href="/contact"
+                  <a
+                    href="https://app.usebizflow.com"
                     className={`mt-8 block w-full rounded-full py-3 text-center text-sm font-semibold transition-colors ${
                       plan.highlight
                         ? "bg-white text-primary hover:bg-blue-50"
@@ -190,7 +190,7 @@ export default function PricingPage() {
                     }`}
                   >
                     {plan.cta}
-                  </Link>
+                  </a>
                 </div>
               </AnimatedSection>
             ))}
@@ -247,12 +247,12 @@ export default function PricingPage() {
             <p className="mt-3 text-blue-100">
               No credit card required. Get started in under 2 minutes.
             </p>
-            <Link
-              href="/contact"
+            <a
+              href="https://app.usebizflow.com"
               className="mt-6 inline-flex items-center justify-center gap-2 rounded-full bg-white px-8 py-3 text-base font-semibold text-primary hover:bg-blue-50 transition-colors"
             >
               Get Started <ArrowRight className="h-4 w-4" />
-            </Link>
+            </a>
           </AnimatedSection>
         </div>
       </section>
