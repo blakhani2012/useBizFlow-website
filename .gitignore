@@ -39,3 +39,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+captures-excluded/
+
+# firebase deploy cache
+/.firebase/
+
+# claude code local config
+/.claude/

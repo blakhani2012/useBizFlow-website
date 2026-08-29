@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import AnimatedSection from "@/components/AnimatedSection";
 import {
   Mail,
@@ -10,14 +12,57 @@ import {
   Clock,
   MessageSquare,
   CheckCircle2,
+  Loader2,
 } from "lucide-react";
 
-export default function ContactPage() {
-  const [submitted, setSubmitted] = useState(false);
+// Get your free access key at https://web3forms.com
+// Enter support@usebizflow.com to receive form submissions via email
+const WEB3FORMS_ACCESS_KEY = "e5167ec0-8ffb-4b28-a9bd-6ea09ad337e9";
 
-  const handleSubmit = (e: React.FormEvent) => {
+function ContactPageInner() {
+  // Prefill from links like /contact?interest=Custom Pricing&modules=CRM,...
+  // (set by the pricing page module picker and demo CTAs)
+  const searchParams = useSearchParams();
+  const modulesParam = searchParams.get("modules");
+
+  const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [interest, setInterest] = useState(searchParams.get("interest") ?? "");
+  const [message, setMessage] = useState(
+    modulesParam
+      ? `Hi, I'd like a demo of BizFlow. We're interested in these modules: ${modulesParam}.`
+      : ""
+  );
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setSubmitted(true);
+    setLoading(true);
+    setError("");
+
+    const formData = new FormData(e.currentTarget);
+    formData.append("access_key", WEB3FORMS_ACCESS_KEY);
+    formData.append("subject", "New Inquiry from BizFlow Website");
+    formData.append("from_name", "BizFlow Website");
+
+    try {
+      const response = await fetch("https://api.web3forms.com/submit", {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setSubmitted(true);
+      } else {
+        setError("Something went wrong. Please try again or email us directly.");
+      }
+    } catch {
+      setError("Network error. Please try again or email us at support@usebizflow.com");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -67,7 +112,7 @@ export default function ContactPage() {
                         Email
                       </div>
                       <div className="text-sm text-muted">
-                        hello@usebizflow.com
+                        support@usebizflow.com
                       </div>
                     </div>
                   </div>
@@ -159,6 +204,9 @@ export default function ContactPage() {
                     </div>
                   ) : (
                     <form onSubmit={handleSubmit} className="space-y-6">
+                      {/* Honeypot for spam prevention */}
+                      <input type="checkbox" name="botcheck" className="hidden" />
+
                       <div className="grid sm:grid-cols-2 gap-6">
                         <div>
                           <label className="block text-sm font-medium text-foreground mb-1.5">
@@ -166,6 +214,7 @@ export default function ContactPage() {
                           </label>
                           <input
                             type="text"
+                            name="first_name"
                             required
                             className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm text-foreground placeholder-slate-400 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors"
                             placeholder="John"
@@ -177,6 +226,7 @@ export default function ContactPage() {
                           </label>
                           <input
                             type="text"
+                            name="last_name"
                             required
                             className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm text-foreground placeholder-slate-400 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors"
                             placeholder="Doe"
@@ -190,6 +240,7 @@ export default function ContactPage() {
                         </label>
                         <input
                           type="email"
+                          name="email"
                           required
                           className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm text-foreground placeholder-slate-400 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors"
                           placeholder="john@company.com"
@@ -202,6 +253,7 @@ export default function ContactPage() {
                         </label>
                         <input
                           type="text"
+                          name="company"
                           className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm text-foreground placeholder-slate-400 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors"
                           placeholder="Acme Inc."
                         />
@@ -213,6 +265,7 @@ export default function ContactPage() {
                         </label>
                         <input
                           type="tel"
+                          name="phone"
                           className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm text-foreground placeholder-slate-400 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors"
                           placeholder="+91 98765 43210"
                         />
@@ -223,16 +276,19 @@ export default function ContactPage() {
                           What are you interested in? *
                         </label>
                         <select
+                          name="interest"
                           required
+                          value={interest}
+                          onChange={(e) => setInterest(e.target.value)}
                           className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm text-foreground focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors"
                         >
                           <option value="">Select an option</option>
-                          <option value="demo">Product Demo</option>
-                          <option value="trial">Free Trial</option>
-                          <option value="pricing">Custom Pricing</option>
-                          <option value="support">Technical Support</option>
-                          <option value="partnership">Partnership</option>
-                          <option value="other">Other</option>
+                          <option value="Product Demo">Product Demo</option>
+                          <option value="Free Trial">Free Trial</option>
+                          <option value="Custom Pricing">Custom Pricing</option>
+                          <option value="Technical Support">Technical Support</option>
+                          <option value="Partnership">Partnership</option>
+                          <option value="Other">Other</option>
                         </select>
                       </div>
 
@@ -241,24 +297,50 @@ export default function ContactPage() {
                           Message *
                         </label>
                         <textarea
+                          name="message"
                           required
                           rows={4}
+                          value={message}
+                          onChange={(e) => setMessage(e.target.value)}
                           className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm text-foreground placeholder-slate-400 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors resize-none"
                           placeholder="Tell us about your business and what you're looking for..."
                         />
                       </div>
 
+                      {error && (
+                        <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+                          {error}
+                        </div>
+                      )}
+
                       <button
                         type="submit"
-                        className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-primary px-8 py-3 text-base font-semibold text-white shadow-lg shadow-primary/25 hover:bg-primary-dark transition-all"
+                        disabled={loading}
+                        className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-primary px-8 py-3 text-base font-semibold text-white shadow-lg shadow-primary/25 hover:bg-primary-dark transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                       >
-                        <Send className="h-4 w-4" />
-                        Send Message
+                        {loading ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            Sending...
+                          </>
+                        ) : (
+                          <>
+                            <Send className="h-4 w-4" />
+                            Send Message
+                          </>
+                        )}
                       </button>
 
                       <p className="text-xs text-center text-muted">
-                        By submitting this form, you agree to our Privacy Policy
-                        and Terms of Service.
+                        By submitting this form, you agree to our{" "}
+                        <Link href="/privacy" className="text-primary hover:underline">
+                          Privacy Policy
+                        </Link>{" "}
+                        and{" "}
+                        <Link href="/terms" className="text-primary hover:underline">
+                          Terms of Service
+                        </Link>
+                        .
                       </p>
                     </form>
                   )}
@@ -269,5 +351,13 @@ export default function ContactPage() {
         </div>
       </section>
     </>
+  );
+}
+
+export default function ContactPage() {
+  return (
+    <Suspense fallback={null}>
+      <ContactPageInner />
+    </Suspense>
   );
 }

@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "BizFlow — All-in-One Business Management Platform",
   description:
-    "CRM, Inventory, Sales, Purchases, Manufacturing, and more — all in one powerful platform. Built for growing businesses in India and beyond.",
+    "CRM, Inventory, Sales, Purchases, Production Control & Quality, and more — all in one powerful platform. Built for growing businesses in India and beyond.",
   keywords: [
     "ERP",
     "CRM",

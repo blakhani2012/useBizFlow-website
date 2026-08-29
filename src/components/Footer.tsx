@@ -3,6 +3,7 @@ import Link from "next/link";
 const footerLinks = {
   Product: [
     { name: "Features", href: "/features" },
+    { name: "Product Tour", href: "/demo" },
     { name: "Pricing", href: "/pricing" },
     { name: "CRM", href: "/features#crm" },
     { name: "Inventory", href: "/features#inventory" },
@@ -11,19 +12,15 @@ const footerLinks = {
   Company: [
     { name: "About", href: "/about" },
     { name: "Contact", href: "/contact" },
-    { name: "Blog", href: "#" },
-    { name: "Careers", href: "#" },
   ],
   Support: [
-    { name: "Help Center", href: "#" },
-    { name: "Documentation", href: "#" },
-    { name: "API Reference", href: "#" },
-    { name: "Status", href: "#" },
+    { name: "Book a Free Demo", href: "/contact?interest=Product Demo" },
+    { name: "Help & Support", href: "/contact?interest=Support" },
+    { name: "Sign In", href: "https://app.usebizflow.com" },
   ],
   Legal: [
-    { name: "Privacy Policy", href: "#" },
-    { name: "Terms of Service", href: "#" },
-    { name: "Cookie Policy", href: "#" },
+    { name: "Privacy Policy", href: "/privacy" },
+    { name: "Terms of Service", href: "/terms" },
   ],
 };
 
@@ -33,17 +30,22 @@ export default function Footer() {
       <div className="mx-auto max-w-7xl px-6 py-16 lg:px-8">
         <div className="grid grid-cols-2 gap-8 md:grid-cols-5">
           <div className="col-span-2 md:col-span-1">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                <span className="text-white font-bold text-sm">B</span>
-              </div>
-              <span className="text-xl font-bold text-white">
-                Biz<span className="text-primary-light">Flow</span>
-              </span>
+            <div className="mb-4">
+              <img
+                src="/logo-dark.png"
+                alt="useBizflow"
+                className="h-10 w-auto"
+              />
             </div>
             <p className="text-sm text-slate-400 max-w-xs">
               The all-in-one business management platform for growing companies. CRM, Inventory, Sales, and more.
             </p>
+            <a
+              href="mailto:support@usebizflow.com"
+              className="mt-3 inline-flex items-center gap-1.5 text-sm text-slate-400 hover:text-white transition-colors"
+            >
+              support@usebizflow.com
+            </a>
           </div>
 
           {Object.entries(footerLinks).map(([category, links]) => (
@@ -69,17 +71,12 @@ export default function Footer() {
           <p className="text-sm text-slate-500">
             &copy; {new Date().getFullYear()} BizFlow by Finscape Innovation. All rights reserved.
           </p>
-          <div className="flex gap-6">
-            <a href="#" className="text-slate-400 hover:text-white transition-colors text-sm">
-              Twitter
-            </a>
-            <a href="#" className="text-slate-400 hover:text-white transition-colors text-sm">
-              LinkedIn
-            </a>
-            <a href="#" className="text-slate-400 hover:text-white transition-colors text-sm">
-              GitHub
-            </a>
-          </div>
+          <a
+            href="mailto:support@usebizflow.com"
+            className="text-slate-400 hover:text-white transition-colors text-sm"
+          >
+            support@usebizflow.com
+          </a>
         </div>
       </div>
     </footer>

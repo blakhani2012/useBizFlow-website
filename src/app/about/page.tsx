@@ -225,23 +225,23 @@ export default function AboutPage() {
         <div className="mx-auto max-w-4xl px-6 lg:px-8 text-center">
           <AnimatedSection>
             <h2 className="text-3xl font-bold text-white">
-              Ready to join us?
+              See BizFlow on your own workflows
             </h2>
             <p className="mt-3 text-blue-100">
-              Start using BizFlow today and see the difference.
+              A free 30-minute demo, then a quote for exactly the modules you need.
             </p>
             <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
-              <a
-                href="https://app.usebizflow.com"
+              <Link
+                href="/contact?interest=Product Demo"
                 className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-8 py-3 text-base font-semibold text-primary hover:bg-blue-50 transition-colors"
               >
-                Get Started <ArrowRight className="h-4 w-4" />
-              </a>
+                Book a Free Demo <ArrowRight className="h-4 w-4" />
+              </Link>
               <Link
-                href="/contact"
+                href="/demo"
                 className="inline-flex items-center justify-center gap-2 rounded-full border-2 border-white/30 px-8 py-3 text-base font-semibold text-white hover:bg-white/10 transition-colors"
               >
-                Contact Sales
+                Take the Product Tour
               </Link>
             </div>
           </AnimatedSection>

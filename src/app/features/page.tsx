@@ -13,7 +13,6 @@ import {
   FolderOpen,
   ScanBarcode,
   ArrowRight,
-  CheckCircle2,
   Workflow,
   Mail,
   MessageSquare,
@@ -23,6 +22,10 @@ import {
   Truck,
   ShieldCheck,
   UserCog,
+  Network,
+  FileWarning,
+  Waypoints,
+  FileCog,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -34,6 +37,8 @@ const featureSections = [
     subtitle: "Turn leads into customers with a powerful, visual sales pipeline",
     color: "blue",
     gradient: "from-blue-500 to-blue-600",
+    screenshot: "/screenshots/capture-v3/crm.png",
+    screenshotAlt: "BizFlow CRM dashboard — pipeline value, win rate, conversion, today's follow-ups, and a live pipeline snapshot",
     features: [
       {
         icon: Users,
@@ -84,6 +89,8 @@ const featureSections = [
     subtitle: "Complete control over your products, stock levels, and catalogs",
     color: "emerald",
     gradient: "from-emerald-500 to-emerald-600",
+    screenshot: "/screenshots/capture-v3/inventory.png",
+    screenshotAlt: "BizFlow inventory — product catalogue with SKUs, categories, live stock levels and low-stock highlighting",
     features: [
       {
         icon: Package,
@@ -114,6 +121,8 @@ const featureSections = [
     subtitle: "GST-compliant invoicing with professional document generation",
     color: "violet",
     gradient: "from-violet-500 to-violet-600",
+    screenshot: "/screenshots/capture-v3/sales-invoices.png",
+    screenshotAlt: "BizFlow invoices — outstanding, overdue, draft and paid KPIs over GST tax invoices with payment tracking",
     features: [
       {
         icon: FileText,
@@ -144,6 +153,8 @@ const featureSections = [
     subtitle: "Streamline procurement with approval workflows and supplier tracking",
     color: "orange",
     gradient: "from-orange-500 to-orange-600",
+    screenshot: "/screenshots/capture-v3/purchases.png",
+    screenshotAlt: "BizFlow purchases — purchase orders with approval workflow, goods-receipt progress and open-value KPIs",
     features: [
       {
         icon: ShoppingCart,
@@ -170,30 +181,52 @@ const featureSections = [
   {
     id: "manufacturing",
     icon: Factory,
-    title: "Manufacturing",
-    subtitle: "End-to-end production management from BOM to finished goods",
+    title: "Production Control & Quality",
+    subtitle: "End-to-end production and quality — from BOM and work orders to inspections, NCRs and traceability",
     color: "rose",
     gradient: "from-rose-500 to-rose-600",
+    screenshot: "/screenshots/capture-v3/work-orders.png",
+    screenshotAlt: "BizFlow work orders — finished goods and sub-assemblies with live progress, floor status and drafts to release",
     features: [
       {
-        icon: Factory,
+        icon: Network,
         title: "Bill of Materials",
-        desc: "Create multi-level BOMs with components, waste percentages, and approval workflows.",
+        desc: "Multi-level BOMs with materials, operations and revisions — auto-costed and checked against live stock.",
+      },
+      {
+        icon: Factory,
+        title: "Work Orders",
+        desc: "Release finished goods and sub-assemblies, track live progress and floor status, in a table or board.",
+      },
+      {
+        icon: ShieldCheck,
+        title: "Quality Overview",
+        desc: "First-pass yield, rejections, quarantine and open NCRs — with pass rates and a supplier scorecard.",
       },
       {
         icon: ClipboardCheck,
-        title: "Work Orders",
-        desc: "Multi-stage production tracking with material issue, stage execution, and completion.",
+        title: "Inspection Worklist",
+        desc: "Incoming, in-process and final inspections in one queue, with sample size from the bound template.",
       },
       {
-        icon: Package,
-        title: "Material Planning",
-        desc: "Pre-production stock check showing required vs. available quantities and shortages.",
+        icon: FileWarning,
+        title: "Non-Conformance (NCR)",
+        desc: "Track every reject — severity, quantity held out of stock, and rework / scrap / use-as-is disposition.",
       },
       {
-        icon: BarChart3,
-        title: "Production Tracking",
-        desc: "Complete audit trail: stage progress, material consumption, and work order history.",
+        icon: Waypoints,
+        title: "Control Points",
+        desc: "Gate quality at receipt, first article, in-process, final and pre-dispatch — block, warn or skip-lot.",
+      },
+      {
+        icon: FileCog,
+        title: "Quality Templates",
+        desc: "Reusable, versioned inspection specs — parameters, sample size and acceptance bound to products.",
+      },
+      {
+        icon: ScanBarcode,
+        title: "Lot Traceability",
+        desc: "Trace any lot or serial to where it was received, inspected, produced and used — both directions.",
       },
     ],
   },
@@ -244,8 +277,9 @@ export default function FeaturesPage() {
                 </span>
               </h1>
               <p className="mt-6 text-lg text-muted leading-relaxed">
-                BizFlow brings together CRM, inventory, sales, purchases, manufacturing,
-                and task management in one unified platform. Explore what each module can do.
+                BizFlow brings together CRM, inventory, sales, purchases, production
+                control &amp; quality, and task management in one unified platform. Explore
+                what each module can do.
               </p>
             </div>
           </AnimatedSection>
@@ -292,6 +326,28 @@ export default function FeaturesPage() {
               </div>
             </AnimatedSection>
 
+            {section.screenshot && (
+              <AnimatedSection delay={0.1}>
+                <div className="mt-8 rounded-2xl overflow-hidden shadow-2xl shadow-slate-300/40 border border-slate-200/80 bg-white">
+                  <div className="bg-slate-100 px-4 py-2.5 flex items-center gap-2 border-b border-slate-200/60">
+                    <div className="flex gap-1.5">
+                      <div className="h-2.5 w-2.5 rounded-full bg-red-400" />
+                      <div className="h-2.5 w-2.5 rounded-full bg-yellow-400" />
+                      <div className="h-2.5 w-2.5 rounded-full bg-green-400" />
+                    </div>
+                    <div className="flex-1 mx-12">
+                      <div className="h-4 bg-slate-200/80 rounded-full max-w-sm mx-auto" />
+                    </div>
+                  </div>
+                  <img
+                    src={section.screenshot}
+                    alt={section.screenshotAlt}
+                    className="w-full"
+                  />
+                </div>
+              </AnimatedSection>
+            )}
+
             <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {section.features.map((feature, i) => (
                 <AnimatedSection key={feature.title} delay={i * 0.05}>
@@ -319,20 +375,20 @@ export default function FeaturesPage() {
               Ready to see it in action?
             </h2>
             <p className="mt-4 text-blue-100">
-              Start your free trial today or book a personalized demo.
+              Take the self-guided product tour or book a personalized demo.
             </p>
             <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
-              <a
-                href="https://app.usebizflow.com"
+              <Link
+                href="/demo"
                 className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-8 py-3 text-base font-semibold text-primary hover:bg-blue-50 transition-colors"
               >
-                Start Free Trial <ArrowRight className="h-4 w-4" />
-              </a>
+                Take the Product Tour <ArrowRight className="h-4 w-4" />
+              </Link>
               <Link
                 href="/pricing"
                 className="inline-flex items-center justify-center gap-2 rounded-full border-2 border-white/30 px-8 py-3 text-base font-semibold text-white hover:bg-white/10 transition-colors"
               >
-                View Pricing
+                How Pricing Works
               </Link>
             </div>
           </AnimatedSection>

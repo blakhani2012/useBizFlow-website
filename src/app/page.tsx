@@ -18,6 +18,7 @@ import {
   ArrowRight,
   CheckCircle2,
   Star,
+  PlayCircle,
 } from "lucide-react";
 
 const modules = [
@@ -51,9 +52,9 @@ const modules = [
   },
   {
     icon: Factory,
-    title: "Manufacturing",
+    title: "Production Control & Quality",
     description:
-      "Bill of Materials, multi-stage work orders, material requirement planning, and production tracking.",
+      "Bill of Materials, work orders, inspections, non-conformance (NCR), control points, and lot traceability.",
     color: "from-rose-500 to-rose-600",
   },
   {
@@ -110,39 +111,39 @@ export default function Home() {
                 from one place
               </h1>
               <p className="mt-6 text-lg text-muted max-w-xl leading-relaxed">
-                CRM, Inventory, Sales, Purchases, Manufacturing, and Task Management —
+                CRM, Inventory, Sales, Purchases, Production Control, and Task Management —
                 everything your growing business needs, beautifully integrated in one platform.
               </p>
               <div className="mt-8 flex flex-col sm:flex-row gap-4">
-                <a
-                  href="https://app.usebizflow.com"
+                <Link
+                  href="/contact?interest=Product Demo"
                   className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-8 py-3.5 text-base font-semibold text-white shadow-lg shadow-primary/25 hover:bg-primary-dark transition-all hover:shadow-xl hover:shadow-primary/30"
                 >
-                  Start Free Trial
+                  Book a Free Demo
                   <ArrowRight className="h-4 w-4" />
-                </a>
+                </Link>
                 <Link
-                  href="/features"
+                  href="/demo"
                   className="inline-flex items-center justify-center gap-2 rounded-full border border-slate-300 px-8 py-3.5 text-base font-semibold text-foreground hover:bg-surface transition-colors"
                 >
-                  Explore Features
+                  <PlayCircle className="h-5 w-5 text-primary" />
+                  Tour 27 Real Product Screens
                 </Link>
               </div>
               <div className="mt-8 flex items-center gap-6 text-sm text-muted">
                 <span className="flex items-center gap-1.5">
                   <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                  Free tier available
+                  Modular — pay only for what you use
                 </span>
                 <span className="flex items-center gap-1.5">
                   <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                  No credit card required
+                  Free 30-min demo
                 </span>
               </div>
             </AnimatedSection>
 
             <AnimatedSection delay={0.2}>
-              <div className="relative">
-                {/* Placeholder illustration - dashboard mockup */}
+              <Link href="/demo" className="relative block group">
                 <div className="rounded-2xl bg-white shadow-2xl shadow-slate-200/50 border border-slate-200/60 overflow-hidden">
                   <div className="bg-slate-100 px-4 py-3 flex items-center gap-2">
                     <div className="flex gap-1.5">
@@ -154,53 +155,18 @@ export default function Home() {
                       <div className="h-5 bg-slate-200 rounded-full max-w-xs mx-auto" />
                     </div>
                   </div>
-                  <div className="p-6 space-y-4">
-                    {/* Mini dashboard mockup */}
-                    <div className="grid grid-cols-3 gap-3">
-                      {["Revenue", "Leads", "Orders"].map((label, i) => (
-                        <div key={label} className="bg-slate-50 rounded-xl p-3">
-                          <div className="text-xs text-muted mb-1">{label}</div>
-                          <div className="text-lg font-bold text-foreground">
-                            {["$48.2K", "142", "89"][i]}
-                          </div>
-                          <div className="mt-1 h-1.5 bg-slate-200 rounded-full overflow-hidden">
-                            <div
-                              className={`h-full rounded-full ${
-                                ["bg-blue-500", "bg-emerald-500", "bg-violet-500"][i]
-                              }`}
-                              style={{ width: `${[72, 58, 85][i]}%` }}
-                            />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    {/* Chart placeholder */}
-                    <div className="bg-slate-50 rounded-xl p-4 h-36 flex items-end gap-1.5">
-                      {[40, 55, 35, 70, 60, 80, 65, 90, 75, 95, 85, 70].map(
-                        (h, i) => (
-                          <div
-                            key={i}
-                            className="flex-1 bg-gradient-to-t from-primary to-primary-light rounded-t-sm opacity-80"
-                            style={{ height: `${h}%` }}
-                          />
-                        )
-                      )}
-                    </div>
-                    {/* Table rows placeholder */}
-                    <div className="space-y-2">
-                      {[1, 2, 3].map((row) => (
-                        <div
-                          key={row}
-                          className="flex items-center gap-3 bg-slate-50 rounded-lg p-2.5"
-                        >
-                          <div className="h-8 w-8 rounded-full bg-slate-200" />
-                          <div className="flex-1 space-y-1.5">
-                            <div className="h-3 bg-slate-200 rounded-full w-3/4" />
-                            <div className="h-2 bg-slate-100 rounded-full w-1/2" />
-                          </div>
-                          <div className="h-6 w-16 bg-emerald-100 rounded-full" />
-                        </div>
-                      ))}
+                  <div className="relative">
+                    <img
+                      src="/screenshots/capture-v3/crm.png"
+                      alt="BizFlow CRM dashboard — pipeline value, win rate, conversion, today's follow-ups, and a live pipeline snapshot"
+                      className="w-full"
+                    />
+                    {/* Hover overlay → product tour */}
+                    <div className="absolute inset-0 bg-slate-900/0 group-hover:bg-slate-900/40 transition-colors flex items-center justify-center">
+                      <span className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-primary shadow-xl opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all">
+                        <PlayCircle className="h-5 w-5" />
+                        Take the Product Tour
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -214,7 +180,7 @@ export default function Home() {
                     <div className="text-sm font-bold text-foreground">+24% Growth</div>
                   </div>
                 </div>
-              </div>
+              </Link>
             </AnimatedSection>
           </div>
         </div>
@@ -331,10 +297,11 @@ export default function Home() {
           <AnimatedSection>
             <div className="text-center max-w-2xl mx-auto mb-12">
               <h2 className="text-3xl sm:text-4xl font-bold text-foreground">
-                Trusted by growing businesses
+                Built with our pilot businesses
               </h2>
               <p className="mt-4 text-lg text-muted">
-                See what business owners are saying about BizFlow.
+                Early-access feedback from the businesses BizFlow was shaped
+                around — named case studies coming soon.
               </p>
             </div>
           </AnimatedSection>
@@ -344,20 +311,20 @@ export default function Home() {
               {
                 quote:
                   "BizFlow replaced 4 different tools we were using. Everything from CRM to invoicing is now in one place.",
-                name: "Rajesh Patel",
-                role: "Director, Manufacturing Co.",
+                name: "Manufacturing pilot",
+                role: "Director, early-access customer",
               },
               {
                 quote:
                   "The GST compliance features saved us hours every month. The invoice generation is professional and fast.",
-                name: "Priya Sharma",
-                role: "CFO, Trading Business",
+                name: "Trading pilot",
+                role: "Finance head, early-access customer",
               },
               {
                 quote:
                   "Our sales team loves the CRM pipeline view. Lead scoring and automation have improved our conversion rate.",
-                name: "Amit Kumar",
-                role: "Sales Head, Services Firm",
+                name: "Services pilot",
+                role: "Sales head, early-access customer",
               },
             ].map((testimonial, i) => (
               <AnimatedSection key={i} delay={i * 0.1}>
@@ -401,22 +368,23 @@ export default function Home() {
               Ready to streamline your business?
             </h2>
             <p className="mt-4 text-lg text-blue-100 max-w-2xl mx-auto">
-              Join hundreds of businesses that use BizFlow to manage their operations.
-              Start with our free tier — no credit card required.
+              Run CRM, sales, purchases, inventory, and projects in one place.
+              Book a free demo — we&apos;ll tailor it to the modules you need.
             </p>
             <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
-              <a
-                href="https://app.usebizflow.com"
+              <Link
+                href="/contact?interest=Product Demo"
                 className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-8 py-3.5 text-base font-semibold text-primary shadow-lg hover:bg-blue-50 transition-colors"
               >
-                Get Started Free
+                Book a Free Demo
                 <ArrowRight className="h-4 w-4" />
-              </a>
+              </Link>
               <Link
-                href="/contact"
+                href="/demo"
                 className="inline-flex items-center justify-center gap-2 rounded-full border-2 border-white/30 px-8 py-3.5 text-base font-semibold text-white hover:bg-white/10 transition-colors"
               >
-                Book a Demo
+                <PlayCircle className="h-5 w-5" />
+                Take the Product Tour
               </Link>
             </div>
           </AnimatedSection>
