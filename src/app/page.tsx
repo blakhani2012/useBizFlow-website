@@ -164,7 +164,11 @@ export default function Home() {
                     <img
                       src="/screenshots/capture-v3/crm.png"
                       alt="BizFlow CRM dashboard — pipeline value, win rate, conversion, today's follow-ups, and a live pipeline snapshot"
-                      className="w-full"
+                      width={3010}
+                      height={1720}
+                      fetchPriority="high"
+                      decoding="async"
+                      className="w-full h-auto"
                     />
                     {/* Hover overlay → product tour */}
                     <div className="absolute inset-0 bg-slate-900/0 group-hover:bg-slate-900/40 transition-colors flex items-center justify-center">

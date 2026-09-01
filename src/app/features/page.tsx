@@ -343,7 +343,11 @@ export default function FeaturesPage() {
                   <img
                     src={section.screenshot}
                     alt={section.screenshotAlt}
-                    className="w-full"
+                    width={3010}
+                    height={1720}
+                    loading="lazy"
+                    decoding="async"
+                    className="w-full h-auto"
                   />
                 </div>
               </AnimatedSection>

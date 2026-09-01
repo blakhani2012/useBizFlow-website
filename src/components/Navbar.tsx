@@ -23,6 +23,8 @@ export default function Navbar() {
             <img
               src="/logo-light.png"
               alt="useBizflow"
+              width={2040}
+              height={600}
               className="h-14 w-auto"
             />
           </Link>
