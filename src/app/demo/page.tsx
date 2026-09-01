@@ -19,26 +19,28 @@ export default function DemoPage() {
           <div className="absolute -top-32 -right-32 h-72 w-72 rounded-full bg-primary/5 animate-float" />
           <div className="absolute top-40 -left-24 h-56 w-56 rounded-full bg-accent/5 animate-float-delayed" />
         </div>
+        {/* The hero is this page's LCP element, so it renders statically rather
+            than inside AnimatedSection — that starts at opacity 0 and keeps the
+            headline invisible until hydration. Below-the-fold sections keep
+            their entrance animation. */}
         <div className="relative mx-auto max-w-7xl px-6 lg:px-8">
-          <AnimatedSection>
-            <div className="text-center max-w-3xl mx-auto">
-              <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary mb-6">
-                <MousePointerClick className="h-4 w-4" />
-                Self-guided tour · Real product screens
-              </div>
-              <h1 className="text-4xl sm:text-5xl font-bold text-foreground leading-tight">
-                See BizFlow{" "}
-                <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                  in action
-                </span>
-              </h1>
-              <p className="mt-6 text-lg text-muted leading-relaxed">
-                Walk through the actual product — from production control and
-                quality to the CRM pipeline, invoicing, purchases and inventory.
-                Click any screen on the left, or sit back and let it play.
-              </p>
+          <div className="text-center max-w-3xl mx-auto">
+            <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary mb-6">
+              <MousePointerClick className="h-4 w-4" />
+              Self-guided tour · Real product screens
             </div>
-          </AnimatedSection>
+            <h1 className="text-4xl sm:text-5xl font-bold text-foreground leading-tight">
+              See BizFlow{" "}
+              <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                in action
+              </span>
+            </h1>
+            <p className="mt-6 text-lg text-muted leading-relaxed">
+              Walk through the actual product — from production control and
+              quality to the CRM pipeline, invoicing, purchases and inventory.
+              Click any screen on the left, or sit back and let it play.
+            </p>
+          </div>
         </div>
       </section>
 
