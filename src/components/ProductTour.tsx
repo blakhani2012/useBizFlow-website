@@ -1,6 +1,19 @@
 "use client";
 
-import { Fragment, useCallback, useEffect, useRef, useState } from "react";
+import {
+  Fragment,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
+import type {
+  KeyboardEvent as ReactKeyboardEvent,
+  PointerEvent as ReactPointerEvent,
+} from "react";
+import { useReducedMotion } from "framer-motion";
 import {
   LayoutDashboard,
   Factory,
@@ -39,6 +52,45 @@ import {
 import type { LucideIcon } from "lucide-react";
 
 const AUTOPLAY_MS = 6000;
+
+// Each screenshot is a 3010×1720 PNG weighing 300–550 KB, so mounting all 27 at
+// once cost ~9 MB before the tour was usable. We keep a small recency-ordered
+// window of screens in the DOM instead; MOUNT_LIMIT is the cap on that window
+// (the current and the on-screen stop are always kept on top of it).
+const MOUNT_LIMIT = 6;
+
+// Horizontal travel (px) that counts as a swipe on the stage.
+const SWIPE_THRESHOLD_PX = 40;
+
+const wrapIndex = (i: number, len: number) => ((i % len) + len) % len;
+
+const NO_IDS: ReadonlySet<string> = new Set<string>();
+
+/** Which screenshots are in the DOM, and which of those have finished loading. */
+interface Screens {
+  order: readonly string[]; // most recently requested first
+  ready: ReadonlySet<string>;
+}
+
+// A hydration-safe "has React switched to the client yet?" flag.
+const subscribeNothing = () => () => {};
+const clientSnapshot = () => true;
+const serverSnapshot = () => false;
+
+/**
+ * Run `fn` once the browser is idle so prefetching a neighbouring screenshot
+ * never competes with the screen the visitor is actually looking at.
+ * Falls back to a short timeout where requestIdleCallback is unavailable.
+ */
+function whenIdle(fn: () => void): () => void {
+  if (typeof window === "undefined") return () => {};
+  if (typeof window.requestIdleCallback === "function") {
+    const handle = window.requestIdleCallback(fn, { timeout: 1500 });
+    return () => window.cancelIdleCallback(handle);
+  }
+  const handle = window.setTimeout(fn, 400);
+  return () => window.clearTimeout(handle);
+}
 
 interface Hotspot {
   left: number; // % of image width
@@ -642,14 +694,142 @@ const stops: Stop[] = [
 ];
 
 export default function ProductTour() {
-  const [index, setIndex] = useState(0);
-  const [playing, setPlaying] = useState(true);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Both the reduced-motion preference and the URL hash are client-only facts.
+  // Reading either during the hydration render would not match the prerendered
+  // HTML, so they are gated behind React's client snapshot instead.
+  const isClient = useSyncExternalStore(
+    subscribeNothing,
+    clientSnapshot,
+    serverSnapshot
+  );
+  const prefersReducedMotion = useReducedMotion() ?? false;
+  const reduceMotion = isClient && prefersReducedMotion;
 
-  const goTo = useCallback((i: number, manual = true) => {
-    setIndex(((i % stops.length) + stops.length) % stops.length);
-    if (manual) setPlaying(false);
+  // ── Current stop, incl. deep links (/demo#work-orders) ───────────────────
+  const [hashIndex] = useState(() => {
+    if (typeof window === "undefined") return -1;
+    const id = window.location.hash.replace(/^#/, "");
+    return id ? stops.findIndex((s) => s.id === id) : -1;
+  });
+  const [userIndex, setUserIndex] = useState<number | null>(null);
+  const index = userIndex ?? (isClient && hashIndex !== -1 ? hashIndex : 0);
+
+  // ── Screen mounting ──────────────────────────────────────────────────────
+  // `order` is the recency-ordered list of screens we have decided to put in
+  // the DOM — which is the same as deciding to download them. `ready` holds the
+  // ids whose <img> has finished loading *in its current mount*; evicting a
+  // screen drops its flag in the same update, so a remount waits for its own
+  // load event instead of trusting a stale one.
+  const [screens, setScreens] = useState<Screens>(() => ({
+    order: [stops[0].id],
+    ready: NO_IDS,
+  }));
+
+  const mountScreen = useCallback((id: string, keep: readonly string[]) => {
+    setScreens((prev) => {
+      if (prev.order[0] === id) return prev;
+      const order = [id, ...prev.order.filter((x) => x !== id)].filter(
+        (x, i) => i < MOUNT_LIMIT || keep.includes(x)
+      );
+      const live = new Set([...order, ...keep]);
+      let ready = prev.ready;
+      for (const x of prev.ready) {
+        if (!live.has(x)) {
+          ready = new Set([...prev.ready].filter((y) => live.has(y)));
+          break;
+        }
+      }
+      return { order, ready };
+    });
   }, []);
+
+  const markReady = useCallback((id: string) => {
+    setScreens((prev) =>
+      prev.ready.has(id)
+        ? prev
+        : { order: prev.order, ready: new Set(prev.ready).add(id) }
+    );
+  }, []);
+
+  // The screen actually painted on the stage. It lags `index` whenever the
+  // incoming screenshot has not finished loading — that lag is what preserves
+  // the original invariant: interrupting a crossfade, or jumping via a hotspot
+  // to a stop we have never downloaded, must never leave a blank stage.
+  // `pinned` is the screen to hold meanwhile, captured when we navigate away.
+  const [pinned, setPinned] = useState<number | null>(null);
+  const currentId = stops[index].id;
+  const currentReady = screens.ready.has(currentId);
+  const shownIndex = currentReady ? index : pinned ?? index;
+  const shownStop = stops[shownIndex];
+  const shownId = shownStop.id;
+
+  // What goes in the DOM: the prefetch window, plus — unconditionally — the
+  // stop we are moving to and the stop currently on screen.
+  const renderIds = useMemo(() => {
+    const ids = new Set(screens.order);
+    ids.add(currentId);
+    ids.add(shownId);
+    return ids;
+  }, [screens.order, currentId, shownId]);
+
+  // ── Playback ─────────────────────────────────────────────────────────────
+  // Autoplay never starts on mount: it waits for the tour to be scrolled into
+  // view, never starts under `prefers-reduced-motion: reduce`, and never starts
+  // on a deep link (which is a request for one specific screen).
+  const [inView, setInView] = useState(false);
+  const [wantsPlay, setWantsPlay] = useState(false);
+  const userDecidedRef = useRef(false);
+  const frameRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const node = frameRef.current;
+    if (!node || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (!entry) return;
+        setInView(entry.isIntersecting);
+        if (
+          entry.isIntersecting &&
+          !userDecidedRef.current &&
+          !prefersReducedMotion &&
+          hashIndex === -1
+        ) {
+          setWantsPlay(true);
+        }
+      },
+      { threshold: 0.25 }
+    );
+    io.observe(node);
+    return () => io.disconnect();
+  }, [prefersReducedMotion, hashIndex]);
+
+  // Prefetch the screen the tour will move to next — but only once the tour is
+  // actually on screen, and only when the browser is idle, so a visitor who
+  // never scrolls down (or never gets that far) pays for one screenshot.
+  useEffect(() => {
+    if (!inView) return;
+    return whenIdle(() => {
+      const keep = [currentId, shownId];
+      mountScreen(stops[wrapIndex(index + 1, stops.length)].id, keep);
+      mountScreen(currentId, keep);
+    });
+  }, [inView, index, currentId, shownId, mountScreen]);
+
+  const goTo = useCallback(
+    (i: number, manual = true) => {
+      const target = wrapIndex(i, stops.length);
+      // Hold whatever is painted right now until the target has loaded.
+      setPinned(screens.ready.has(shownId) ? shownIndex : null);
+      mountScreen(stops[target].id, [currentId, shownId]);
+      setUserIndex(target);
+      if (manual) {
+        userDecidedRef.current = true;
+        setWantsPlay(false);
+      }
+    },
+    [screens.ready, shownId, shownIndex, currentId, mountScreen]
+  );
 
   const goToId = useCallback(
     (id: string) => {
@@ -659,37 +839,159 @@ export default function ProductTour() {
     [goTo]
   );
 
+  const togglePlay = useCallback(() => {
+    userDecidedRef.current = true;
+    setWantsPlay((p) => !p);
+  }, []);
+
+  // Hold the timer while an incoming screenshot is still loading, so every stop
+  // gets its full six seconds on screen and the progress bar stays honest.
+  const playing = wantsPlay && inView && index === shownIndex;
+
+  // `goTo` changes identity whenever a prefetch lands; route the tick through a
+  // ref so a background load can never restart the countdown.
+  const goToRef = useRef(goTo);
+  useEffect(() => {
+    goToRef.current = goTo;
+  }, [goTo]);
+
   useEffect(() => {
     if (!playing) return;
-    timerRef.current = setInterval(() => {
-      setIndex((i) => (i + 1) % stops.length);
+    const handle = window.setTimeout(() => {
+      goToRef.current(shownIndex + 1, false);
     }, AUTOPLAY_MS);
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
+    return () => window.clearTimeout(handle);
+  }, [playing, shownIndex]);
+
+  // ── URL hash ─────────────────────────────────────────────────────────────
+  // An externally-driven hash change (a pasted link, browser navigation) is a
+  // deliberate jump, so it goes through `goTo` and gets the same hold-the-stage
+  // treatment as a click.
+  useEffect(() => {
+    const onHashChange = () => {
+      const id = window.location.hash.replace(/^#/, "");
+      const i = id ? stops.findIndex((s) => s.id === id) : -1;
+      if (i !== -1) goToRef.current(i);
     };
-  }, [playing]);
+    window.addEventListener("hashchange", onHashChange);
+    return () => window.removeEventListener("hashchange", onHashChange);
+  }, []);
+
+  // Reflect the stop in the URL with replaceState so a six-second autoplay does
+  // not bury the visitor's real history under 27 entries.
+  useEffect(() => {
+    if (!isClient) return;
+    const next = `#${stops[index].id}`;
+    if (window.location.hash === next) return;
+    // Leave a freshly-opened /demo without a hash until something moves.
+    if (index === 0 && window.location.hash === "") return;
+    window.history.replaceState(null, "", next);
+  }, [index, isClient]);
+
+  // ── Input ────────────────────────────────────────────────────────────────
+  // Arrow keys are handled on the tour container, not on window, so they only
+  // apply when focus is actually inside the tour.
+  const onKeyDown = useCallback(
+    (e: ReactKeyboardEvent<HTMLDivElement>) => {
+      if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+      e.preventDefault();
+      goTo(index + (e.key === "ArrowRight" ? 1 : -1));
+    },
+    [goTo, index]
+  );
+
+  const swipeRef = useRef<{ id: number; x: number; y: number } | null>(null);
+  const onPointerDown = useCallback((e: ReactPointerEvent) => {
+    if (e.pointerType === "mouse") return; // don't turn a click-drag into a jump
+    swipeRef.current = { id: e.pointerId, x: e.clientX, y: e.clientY };
+  }, []);
+  const onPointerUp = useCallback(
+    (e: ReactPointerEvent) => {
+      const start = swipeRef.current;
+      swipeRef.current = null;
+      if (!start || start.id !== e.pointerId) return;
+      const dx = e.clientX - start.x;
+      const dy = e.clientY - start.y;
+      if (Math.abs(dx) < SWIPE_THRESHOLD_PX) return;
+      if (Math.abs(dx) < Math.abs(dy) * 1.5) return; // a scroll, not a swipe
+      goTo(index + (dx < 0 ? 1 : -1));
+    },
+    [goTo, index]
+  );
+  const onPointerCancel = useCallback(() => {
+    swipeRef.current = null;
+  }, []);
+
+  // ── Stop rail ────────────────────────────────────────────────────────────
+  // Keep the active chip in view in whichever rail is scrollable: the
+  // horizontal strip on mobile, the module column on desktop.
+  const railColRef = useRef<HTMLDivElement | null>(null);
+  const railStripRef = useRef<HTMLDivElement | null>(null);
+  const chipRefs = useRef<Record<string, HTMLButtonElement | null>>({});
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "ArrowRight") goTo(index + 1);
-      if (e.key === "ArrowLeft") goTo(index - 1);
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [index, goTo]);
+    const chip = chipRefs.current[stops[index].id];
+    if (!chip) return;
+    const behavior: ScrollBehavior = reduceMotion ? "auto" : "smooth";
+
+    const strip = railStripRef.current;
+    if (strip && strip.scrollWidth > strip.clientWidth + 1) {
+      const stripBox = strip.getBoundingClientRect();
+      const chipBox = chip.getBoundingClientRect();
+      const delta =
+        chipBox.left - stripBox.left - (stripBox.width - chipBox.width) / 2;
+      strip.scrollTo({ left: strip.scrollLeft + delta, behavior });
+    }
+
+    const col = railColRef.current;
+    if (col && col.scrollHeight > col.clientHeight + 1) {
+      const colBox = col.getBoundingClientRect();
+      const chipBox = chip.getBoundingClientRect();
+      const delta =
+        chipBox.top - colBox.top - (colBox.height - chipBox.height) / 2;
+      col.scrollTo({ top: col.scrollTop + delta, behavior });
+    }
+  }, [index, reduceMotion]);
 
   const stop = stops[index];
+  // Hotspots are positioned against the pixels currently on screen, so they
+  // follow the *shown* stop — never the one still downloading.
   const hotspots: Hotspot[] = [
-    ...stop.hotspots,
-    ...(stop.crmTabs ? crmTabsFor(stop.id) : []),
-    ...(stop.taskTabs ? taskTabsFor(stop.id) : []),
+    ...shownStop.hotspots,
+    ...(shownStop.crmTabs ? crmTabsFor(shownStop.id) : []),
+    ...(shownStop.taskTabs ? taskTabsFor(shownStop.id) : []),
   ];
+  const loadingScreen = index !== shownIndex;
+  const prevId = stops[wrapIndex(index - 1, stops.length)].id;
+  const nextId = stops[wrapIndex(index + 1, stops.length)].id;
 
   return (
-    <div className="grid lg:grid-cols-[260px_1fr] gap-6 lg:gap-8 items-start">
-      {/* Stop navigation — grouped by module on desktop, chips on mobile */}
-      <div className="lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto">
-        <div className="flex lg:flex-col gap-2 overflow-x-auto lg:overflow-visible pb-2 lg:pb-0 -mx-6 px-6 lg:mx-0 lg:px-0">
+    <div
+      role="region"
+      aria-label="Interactive BizFlow product tour"
+      aria-describedby="tour-keyboard-help"
+      tabIndex={0}
+      onKeyDown={onKeyDown}
+      className="grid lg:grid-cols-[260px_1fr] gap-6 lg:gap-8 items-start rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-4 focus-visible:ring-offset-white"
+    >
+      <p id="tour-keyboard-help" className="sr-only">
+        A guided tour of {stops.length} BizFlow screens. With the tour focused,
+        press the left and right arrow keys to move between screens; on a touch
+        device, swipe the screenshot.
+      </p>
+
+      {/* Stop navigation — grouped by module on desktop, chips on mobile.
+          `min-w-0` is load-bearing: without it this grid item is sized by its
+          content, the chip strip never becomes a scroller, and the whole page
+          scrolls sideways on a phone instead of the chips. */}
+      <div
+        ref={railColRef}
+        className="relative min-w-0 lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto"
+      >
+        <div
+          ref={railStripRef}
+          className="flex lg:flex-col gap-2 overflow-x-auto lg:overflow-visible snap-x lg:snap-none pb-2 lg:pb-0 -mx-6 px-6 lg:mx-0 lg:px-0"
+        >
           {stops.map((s, i) => (
             <Fragment key={s.id}>
               {(i === 0 || stops[i - 1].module !== s.module) && (
@@ -699,8 +1001,16 @@ export default function ProductTour() {
               )}
               <button
                 type="button"
+                ref={(el) => {
+                  chipRefs.current[s.id] = el;
+                }}
                 onClick={() => goTo(i)}
-                className={`flex items-center gap-3 rounded-xl px-4 py-2.5 text-left shrink-0 lg:shrink lg:w-full transition-all ${
+                // Warm the screenshot the moment the visitor shows intent, so
+                // the jump has its target ready before the click lands.
+                onPointerEnter={() => mountScreen(s.id, [currentId, shownId])}
+                onFocus={() => mountScreen(s.id, [currentId, shownId])}
+                aria-current={i === index ? "true" : undefined}
+                className={`flex items-center gap-3 rounded-xl px-4 py-2.5 min-h-[44px] text-left shrink-0 lg:shrink lg:w-full snap-start transition-all ${
                   i === index
                     ? "bg-primary text-white shadow-lg shadow-primary/25"
                     : "bg-white border border-slate-200 text-muted hover:border-primary/40 hover:text-foreground"
@@ -718,52 +1028,105 @@ export default function ProductTour() {
             </Fragment>
           ))}
         </div>
+        {/* Scroll affordance for the mobile chip strip (it bleeds to the
+            viewport edge, so the fade sits outside the container padding) */}
+        <div
+          aria-hidden="true"
+          className="lg:hidden pointer-events-none absolute inset-y-0 -right-6 w-12 bg-gradient-to-l from-white via-white/70 to-transparent"
+        />
       </div>
 
-      {/* Stage */}
-      <div>
+      {/* Stage — `min-w-0` for the same reason as the rail: a grid item is
+          sized by its content unless told otherwise, and the browser-frame
+          chrome would otherwise push the tour wider than a phone screen. */}
+      <div className="min-w-0">
         {/* Browser frame */}
-        <div className="rounded-2xl overflow-hidden shadow-2xl shadow-slate-300/50 border border-slate-200/80 bg-white">
+        <div
+          ref={frameRef}
+          className="rounded-2xl overflow-hidden shadow-2xl shadow-slate-300/50 border border-slate-200/80 bg-white"
+        >
           <div className="bg-slate-100 px-4 py-2.5 flex items-center gap-3 border-b border-slate-200/60">
             <div className="flex gap-1.5">
               <div className="h-3 w-3 rounded-full bg-red-400" />
               <div className="h-3 w-3 rounded-full bg-yellow-400" />
               <div className="h-3 w-3 rounded-full bg-green-400" />
             </div>
-            <div className="flex-1 flex justify-center">
+            {/* `min-w-0` lets the fake URL bar shrink instead of widening the
+                whole tour past the viewport on a narrow phone */}
+            <div className="flex-1 min-w-0 flex justify-center">
               <div className="bg-white rounded-full px-4 py-1 text-xs text-muted border border-slate-200 truncate max-w-xs">
                 {stop.url}
               </div>
             </div>
-            <div className="hidden sm:flex items-center gap-1.5 text-[11px] font-medium text-primary">
+            <div className="hidden lg:flex items-center gap-1.5 text-[11px] font-medium text-primary">
               <MousePointerClick className="h-3.5 w-3.5" />
               Click the dots — or the tabs
             </div>
+            {/* Hotspots are percentage-sized against a 3010×1720 image, which
+                makes them a few pixels tall on a phone — below `lg` they are
+                hidden and the stop rail plus swipe carry navigation. */}
+            <div className="flex lg:hidden items-center gap-0.5 text-[11px] font-medium text-primary whitespace-nowrap">
+              <ChevronLeft className="h-3 w-3" />
+              Swipe
+              <ChevronRight className="h-3 w-3" />
+            </div>
           </div>
-          <div className="relative aspect-[3010/1720] bg-slate-50">
-            {/* All screens stay mounted (preloaded CSS crossfade — interrupting
-                a transition mid-flight must never leave a blank stage) */}
-            {stops.map((s, i) => (
-              <img
-                key={s.id}
-                src={s.image}
-                alt={`BizFlow — ${s.title}`}
-                className={`pointer-events-none absolute inset-0 w-full h-full object-cover transition-[opacity,transform] duration-500 ease-out ${
-                  i === index ? "opacity-100 scale-100" : "opacity-0 scale-[1.02]"
-                }`}
-              />
-            ))}
+          <div
+            onPointerDown={onPointerDown}
+            onPointerUp={onPointerUp}
+            onPointerCancel={onPointerCancel}
+            style={{ touchAction: "pan-y" }}
+            className="relative aspect-[3010/1720] bg-slate-50"
+          >
+            {/* Only a small window of screens is mounted, but the one on screen
+                is never unmounted and the incoming one only takes over once it
+                has loaded — so interrupting a crossfade, or jumping via a
+                hotspot to a screen we have not downloaded yet, still can never
+                leave a blank stage. */}
+            {stops.map((s, i) =>
+              renderIds.has(s.id) ? (
+                <img
+                  key={s.id}
+                  src={s.image}
+                  alt={`BizFlow — ${s.title}`}
+                  decoding="async"
+                  fetchPriority={i === index ? "high" : "low"}
+                  // A screenshot served from cache (or one that finished before
+                  // hydration attached the handler) may never fire `load`, so
+                  // check `complete` as the element is attached too. Deferred
+                  // out of the commit phase, where a state update is illegal.
+                  ref={(el) => {
+                    if (el?.complete) queueMicrotask(() => markReady(s.id));
+                  }}
+                  onLoad={() => markReady(s.id)}
+                  // A broken screenshot must not wedge the stage on the
+                  // previous screen forever.
+                  onError={() => markReady(s.id)}
+                  className={`pointer-events-none absolute inset-0 w-full h-full object-cover ${
+                    reduceMotion
+                      ? ""
+                      : "transition-[opacity,transform] duration-500 ease-out"
+                  } ${
+                    i === shownIndex
+                      ? "opacity-100 scale-100"
+                      : "opacity-0 scale-[1.02]"
+                  }`}
+                />
+              ) : null
+            )}
 
             {/* In-screenshot hotspots: glowing dots for content, quiet hover
                 regions for the in-app tab bars */}
             {hotspots.map((h) => (
               <button
-                key={`${stop.id}-${h.target}-${h.left}-${h.top}`}
+                key={`${shownStop.id}-${h.target}-${h.left}-${h.top}`}
                 type="button"
                 onClick={() => goToId(h.target)}
+                onPointerEnter={() => mountScreen(h.target, [currentId, shownId])}
+                onFocus={() => mountScreen(h.target, [currentId, shownId])}
                 aria-label={`Go to ${h.label}`}
                 title={h.label}
-                className="group/hs absolute z-10 rounded-lg border-2 border-transparent hover:border-primary/70 hover:bg-primary/10 transition-colors"
+                className="group/hs hidden lg:block absolute z-10 rounded-lg border-2 border-transparent hover:border-primary/70 hover:bg-primary/10 transition-colors"
                 style={{
                   left: `${h.left}%`,
                   top: `${h.top}%`,
@@ -773,7 +1136,9 @@ export default function ProductTour() {
               >
                 {h.pulse !== false && (
                   <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
-                    <span className="absolute inline-flex h-full w-full rounded-full bg-primary opacity-60 animate-ping" />
+                    {!reduceMotion && (
+                      <span className="absolute inline-flex h-full w-full rounded-full bg-primary opacity-60 animate-ping" />
+                    )}
                     <span className="relative inline-flex h-3.5 w-3.5 rounded-full bg-primary ring-2 ring-white" />
                   </span>
                 )}
@@ -790,21 +1155,33 @@ export default function ProductTour() {
               </button>
             ))}
           </div>
-          {/* Autoplay progress */}
+          {/* Autoplay progress — doubles as a loading hint while an incoming
+              screenshot is still on the wire */}
           <div className="h-1 bg-slate-100">
-            {playing && (
+            {loadingScreen ? (
               <div
-                key={`${stop.id}-progress`}
-                className="h-full bg-primary"
-                style={{ animation: `tour-progress ${AUTOPLAY_MS}ms linear both` }}
+                className={`h-full w-1/3 bg-primary/40 ${
+                  reduceMotion ? "" : "animate-pulse"
+                }`}
               />
+            ) : (
+              playing &&
+              !reduceMotion && (
+                <div
+                  key={`${shownStop.id}-progress`}
+                  className="h-full bg-primary"
+                  style={{
+                    animation: `tour-progress ${AUTOPLAY_MS}ms linear both`,
+                  }}
+                />
+              )
             )}
           </div>
         </div>
 
         {/* Caption + controls */}
         <div className="mt-6 grid md:grid-cols-[1fr_auto] gap-6 items-start">
-          <div key={stop.id} className="tour-fade-up">
+          <div key={stop.id} className={reduceMotion ? undefined : "tour-fade-up"}>
             <div className="text-xs font-semibold uppercase tracking-wider text-primary">
               {stop.module} · Step {index + 1} of {stops.length}
             </div>
@@ -830,11 +1207,12 @@ export default function ProductTour() {
           <div className="flex items-center gap-2 md:mt-1">
             <button
               type="button"
-              onClick={() => setPlaying((p) => !p)}
-              aria-label={playing ? "Pause tour" : "Play tour"}
+              onClick={togglePlay}
+              aria-label={wantsPlay ? "Pause tour" : "Play tour"}
+              aria-pressed={wantsPlay}
               className="h-10 w-10 rounded-full border border-slate-200 bg-white flex items-center justify-center text-muted hover:text-primary hover:border-primary/40 transition-colors"
             >
-              {playing ? (
+              {wantsPlay ? (
                 <Pause className="h-4 w-4" />
               ) : (
                 <Play className="h-4 w-4 ml-0.5" />
@@ -843,6 +1221,8 @@ export default function ProductTour() {
             <button
               type="button"
               onClick={() => goTo(index - 1)}
+              onPointerEnter={() => mountScreen(prevId, [currentId, shownId])}
+              onFocus={() => mountScreen(prevId, [currentId, shownId])}
               aria-label="Previous screen"
               className="h-10 w-10 rounded-full border border-slate-200 bg-white flex items-center justify-center text-muted hover:text-primary hover:border-primary/40 transition-colors"
             >
@@ -851,6 +1231,8 @@ export default function ProductTour() {
             <button
               type="button"
               onClick={() => goTo(index + 1)}
+              onPointerEnter={() => mountScreen(nextId, [currentId, shownId])}
+              onFocus={() => mountScreen(nextId, [currentId, shownId])}
               aria-label="Next screen"
               className="h-10 w-10 rounded-full bg-primary flex items-center justify-center text-white shadow-lg shadow-primary/25 hover:bg-primary-dark transition-colors"
             >
