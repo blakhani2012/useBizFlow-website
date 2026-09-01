@@ -68,6 +68,15 @@ Open [http://localhost:3000](http://localhost:3000).
 npm run build
 ```
 
+`postbuild` runs `scripts/fix-export-segment-paths.js`, which repairs the
+per-segment prefetch filenames in `out/`. Next 16.2.6's exporter builds those
+names from a `path.relative()` result but only rewrites forward slashes, so on
+**Windows** the `__PAGE__` segment of every route is written to
+`out/<route>/__next.<route>/__PAGE__.txt` while the client router requests
+`out/<route>/__next.<route>.__PAGE__.txt` — a 404 on every navigation. The
+script flattens them back. It is a no-op on macOS/Linux (and therefore in CI),
+where the exporter already gets the name right.
+
 ## Screenshots & the image pipeline
 
 Product screenshots live in `public/screenshots/capture-v3/` and are captured
