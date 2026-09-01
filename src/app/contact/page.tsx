@@ -7,8 +7,8 @@ import AnimatedSection from "@/components/AnimatedSection";
 import { ENQUIRY_FORM_SLUG, readAttribution } from "@/lib/attribution";
 import {
   Mail,
-  Phone,
   MapPin,
+  MessageCircle,
   Send,
   Clock,
   MessageSquare,
@@ -19,6 +19,35 @@ import {
 // Get your free access key at https://web3forms.com
 // Enter support@usebizflow.com to receive form submissions via email
 const WEB3FORMS_ACCESS_KEY = "e5167ec0-8ffb-4b28-a9bd-6ea09ad337e9";
+
+const SUPPORT_EMAIL = "support@usebizflow.com";
+
+/*
+ * TODO: ADD THE REAL BUSINESS WHATSAPP NUMBER.
+ *
+ * The page used to publish the well-known dummy Indian mobile number as our
+ * phone contact. That block is gone, and nothing here invents a replacement.
+ *
+ * Set this to the real, WhatsApp-enabled business number in full international
+ * form — country code first, digits only, no "+" and no spaces, which is the
+ * format wa.me requires (an Indian mobile becomes "91" followed by its ten
+ * digits). While it is empty the WhatsApp block does not render at all, so
+ * visitors are never shown a contact route that does not work — email stays
+ * the published channel until the number lands.
+ */
+const WHATSAPP_NUMBER: string = "";
+
+// Pre-filled first message so the enquiry arrives with context attached.
+const WHATSAPP_PREFILL =
+  "Hi BizFlow, I'd like to know more about BizFlow for my business.";
+
+const whatsappHref = WHATSAPP_NUMBER
+  ? `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(WHATSAPP_PREFILL)}`
+  : null;
+
+// Reused so every focusable contact link gets the same visible focus ring.
+const CONTACT_LINK_CLASS =
+  "rounded-sm text-sm text-primary underline underline-offset-2 transition-colors hover:text-primary-dark focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary";
 
 /**
  * Creates the CRM lead via the publicEnquiry Cloud Function, reached through
@@ -210,7 +239,7 @@ function ContactPageInner() {
         setError("Something went wrong. Please try again or email us directly.");
       }
     } catch {
-      setError("Network error. Please try again or email us at support@usebizflow.com");
+      setError(`Network error. Please try again or email us at ${SUPPORT_EMAIL}`);
     } finally {
       setLoading(false);
     }
@@ -262,25 +291,41 @@ function ContactPageInner() {
                       <div className="text-sm font-semibold text-foreground">
                         Email
                       </div>
-                      <div className="text-sm text-muted">
-                        support@usebizflow.com
-                      </div>
+                      <a
+                        href={`mailto:${SUPPORT_EMAIL}`}
+                        className={CONTACT_LINK_CLASS}
+                      >
+                        {SUPPORT_EMAIL}
+                      </a>
                     </div>
                   </div>
 
-                  <div className="flex items-start gap-4">
-                    <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                      <Phone className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <div className="text-sm font-semibold text-foreground">
-                        Phone
+                  {/*
+                    The phone block published a dummy number and was removed.
+                    WhatsApp replaces it — see the WHATSAPP_NUMBER TODO at the
+                    top of this file; this block renders only once the real
+                    number is set.
+                  */}
+                  {whatsappHref && (
+                    <div className="flex items-start gap-4">
+                      <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                        <MessageCircle className="h-5 w-5 text-primary" />
                       </div>
-                      <div className="text-sm text-muted">
-                        +91 98765 43210
+                      <div>
+                        <div className="text-sm font-semibold text-foreground">
+                          WhatsApp
+                        </div>
+                        <a
+                          href={whatsappHref}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={CONTACT_LINK_CLASS}
+                        >
+                          Message us on WhatsApp
+                        </a>
                       </div>
                     </div>
-                  </div>
+                  )}
 
                   <div className="flex items-start gap-4">
                     <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
@@ -467,7 +512,7 @@ function ContactPageInner() {
                           aria-invalid={fieldErrors.phone ? true : undefined}
                           aria-describedby={describedBy("phone", "contact-phone-hint")}
                           className={fieldClass("phone")}
-                          placeholder="+91 98765 43210"
+                          placeholder="+91 XXXXX XXXXX"
                         />
                         {fieldErrorNode("phone")}
                         <p id="contact-phone-hint" className="mt-1.5 text-xs text-muted">
