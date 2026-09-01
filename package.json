@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "optimize:images": "node scripts/optimize-images.js"
   },
   "dependencies": {
     "framer-motion": "^12.39.0",
@@ -23,6 +24,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
     "playwright-core": "^1.60.0",
+    "sharp": "^0.35.4",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
