@@ -250,20 +250,24 @@ function ContactPageInner() {
       {/* Header */}
       <section className="bg-gradient-to-br from-slate-50 via-white to-blue-50 py-20 sm:py-28">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          <AnimatedSection>
-            <div className="text-center max-w-3xl mx-auto">
-              <h1 className="text-4xl sm:text-5xl font-bold text-foreground">
-                Get in{" "}
-                <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                  touch
-                </span>
-              </h1>
-              <p className="mt-6 text-lg text-muted">
-                Have questions? Want a demo? We&apos;d love to hear from you.
-                Our team typically responds within 24 hours.
-              </p>
-            </div>
-          </AnimatedSection>
+          {/*
+            Deliberately NOT wrapped in AnimatedSection: this h1 is the page's
+            LCP element, and AnimatedSection starts at opacity 0, so animating
+            it would hide the headline until framer-motion hydrates. Sections
+            below the fold keep the animation.
+          */}
+          <div className="text-center max-w-3xl mx-auto">
+            <h1 className="text-4xl sm:text-5xl font-bold text-foreground">
+              Get in{" "}
+              <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                touch
+              </span>
+            </h1>
+            <p className="mt-6 text-lg text-muted">
+              Have questions? Want a demo? We&apos;d love to hear from you.
+              Our team typically responds within one business day.
+            </p>
+          </div>
         </div>
       </section>
 
@@ -395,7 +399,7 @@ function ContactPageInner() {
                       </h3>
                       <p className="text-muted">
                         We&apos;ve received your message and will get back to you within
-                        24 hours. Check your email for a confirmation.
+                        one business day. Check your email for a confirmation.
                       </p>
                     </div>
                   ) : (
