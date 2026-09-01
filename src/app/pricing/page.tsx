@@ -147,7 +147,8 @@ export default function PricingPage() {
           <div className="absolute top-40 -left-24 h-56 w-56 rounded-full bg-accent/5 animate-float-delayed" />
         </div>
         <div className="relative mx-auto max-w-7xl px-6 lg:px-8">
-          <AnimatedSection>
+          {/* Above the fold — static so the LCP <h1> paints with the first HTML. */}
+          <div>
             <div className="text-center max-w-3xl mx-auto">
               <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary mb-6">
                 <Sparkles className="h-4 w-4" />
@@ -166,7 +167,7 @@ export default function PricingPage() {
                 get a quote tailored to your team.
               </p>
             </div>
-          </AnimatedSection>
+          </div>
         </div>
       </section>
 

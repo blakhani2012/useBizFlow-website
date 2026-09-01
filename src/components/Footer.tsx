@@ -34,6 +34,10 @@ export default function Footer() {
               <img
                 src="/logo-dark.png"
                 alt="useBizflow"
+                width={2040}
+                height={600}
+                loading="lazy"
+                decoding="async"
                 className="h-10 w-auto"
               />
             </div>

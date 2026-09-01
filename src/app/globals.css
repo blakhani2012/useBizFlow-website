@@ -76,3 +76,67 @@ html {
   from { width: 0%; }
   to { width: 100%; }
 }
+
+/* ---------------------------------------------------------------------------
+   Reduced motion
+   ---------------------------------------------------------------------------
+   Decorative motion is switched off entirely; motion that carries meaning
+   (the submit-button spinner, the tour's progress bar) is kept but stripped of
+   its movement so the state it communicates is not lost.
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  /* Purely decorative loops — drifting blobs and the shifting gradient. */
+  .animate-float,
+  .animate-float-delayed,
+  .animate-float-slow,
+  .animate-gradient {
+    animation: none;
+  }
+
+  .animate-gradient {
+    background-position: 50% 50%;
+  }
+
+  /* Tour caption entrance: show the final state immediately. */
+  .tour-fade-up {
+    animation: none;
+  }
+
+  /* The tour's progress bar is driven by an inline `animation` shorthand, so
+     neutralise the keyframes themselves: the bar stays put instead of
+     sweeping, while remaining visible as an indicator. */
+  @keyframes tour-progress {
+    from { width: 100%; }
+    to { width: 100%; }
+  }
+
+  /* Decorative Tailwind loops (hotspot pulses and similar). Kept visible —
+     only the motion is removed. */
+  .animate-ping,
+  .animate-pulse,
+  .animate-bounce {
+    animation: none;
+  }
+
+  .animate-ping {
+    opacity: 0.35;
+  }
+
+  /* The form submit spinner still means "working" — do not hide it. Slow it to
+     a non-vestibular crawl rather than freezing it into a meaningless glyph. */
+  .animate-spin {
+    animation-duration: 3s;
+  }
+
+  /* Safety net for AnimatedSection: framer-motion renders `opacity: 0` into the
+     prerendered HTML, so guarantee the content is visible for reduced-motion
+     visitors regardless of when (or whether) hydration lands. */
+  .animated-section {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}

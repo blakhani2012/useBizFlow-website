@@ -98,7 +98,10 @@ export default function Home() {
 
         <div className="relative mx-auto max-w-7xl px-6 py-24 sm:py-32 lg:px-8 lg:py-40">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <AnimatedSection>
+            {/* Above the fold — deliberately NOT wrapped in AnimatedSection so
+                the LCP <h1> is painted from the server HTML, not after
+                hydration. */}
+            <div>
               <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary mb-6">
                 <Zap className="h-4 w-4" />
                 All-in-one business platform
@@ -140,9 +143,11 @@ export default function Home() {
                   Free 30-min demo
                 </span>
               </div>
-            </AnimatedSection>
+            </div>
 
-            <AnimatedSection delay={0.2}>
+            {/* Also above the fold on desktop (right-hand grid column) — static
+                for the same reason. */}
+            <div>
               <Link href="/demo" className="relative block group">
                 <div className="rounded-2xl bg-white shadow-2xl shadow-slate-200/50 border border-slate-200/60 overflow-hidden">
                   <div className="bg-slate-100 px-4 py-3 flex items-center gap-2">
@@ -159,7 +164,11 @@ export default function Home() {
                     <img
                       src="/screenshots/capture-v3/crm.png"
                       alt="BizFlow CRM dashboard — pipeline value, win rate, conversion, today's follow-ups, and a live pipeline snapshot"
-                      className="w-full"
+                      width={3010}
+                      height={1720}
+                      fetchPriority="high"
+                      decoding="async"
+                      className="w-full h-auto"
                     />
                     {/* Hover overlay → product tour */}
                     <div className="absolute inset-0 bg-slate-900/0 group-hover:bg-slate-900/40 transition-colors flex items-center justify-center">
@@ -181,7 +190,7 @@ export default function Home() {
                   </div>
                 </div>
               </Link>
-            </AnimatedSection>
+            </div>
           </div>
         </div>
       </section>

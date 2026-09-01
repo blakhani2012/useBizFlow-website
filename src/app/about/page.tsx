@@ -72,7 +72,8 @@ export default function AboutPage() {
       {/* Header */}
       <section className="bg-gradient-to-br from-slate-50 via-white to-blue-50 py-20 sm:py-28">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          <AnimatedSection>
+          {/* Above the fold — static so the LCP <h1> paints with the first HTML. */}
+          <div>
             <div className="text-center max-w-3xl mx-auto">
               <h1 className="text-4xl sm:text-5xl font-bold text-foreground">
                 We&apos;re building the{" "}
@@ -86,7 +87,7 @@ export default function AboutPage() {
                 or cost.
               </p>
             </div>
-          </AnimatedSection>
+          </div>
         </div>
       </section>
 

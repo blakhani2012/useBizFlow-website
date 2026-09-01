@@ -268,7 +268,8 @@ export default function FeaturesPage() {
       {/* Header */}
       <section className="bg-gradient-to-br from-slate-50 via-white to-blue-50 py-20 sm:py-28">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          <AnimatedSection>
+          {/* Above the fold — static so the LCP <h1> paints with the first HTML. */}
+          <div>
             <div className="text-center max-w-3xl mx-auto">
               <h1 className="text-4xl sm:text-5xl font-bold text-foreground">
                 Powerful features for{" "}
@@ -282,10 +283,10 @@ export default function FeaturesPage() {
                 what each module can do.
               </p>
             </div>
-          </AnimatedSection>
+          </div>
 
-          {/* Quick nav */}
-          <AnimatedSection delay={0.2}>
+          {/* Quick nav — sits directly under the hero copy, still above the fold */}
+          <div>
             <div className="mt-12 flex flex-wrap justify-center gap-3">
               {featureSections.map((section) => (
                 <a
@@ -298,7 +299,7 @@ export default function FeaturesPage() {
                 </a>
               ))}
             </div>
-          </AnimatedSection>
+          </div>
         </div>
       </section>
 
@@ -342,7 +343,11 @@ export default function FeaturesPage() {
                   <img
                     src={section.screenshot}
                     alt={section.screenshotAlt}
-                    className="w-full"
+                    width={3010}
+                    height={1720}
+                    loading="lazy"
+                    decoding="async"
+                    className="w-full h-auto"
                   />
                 </div>
               </AnimatedSection>
