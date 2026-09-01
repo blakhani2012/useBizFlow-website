@@ -4,6 +4,15 @@
     "public": "out",
     "cleanUrls": true,
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "rewrites": [
+      {
+        "source": "/api/enquiry",
+        "function": {
+          "functionId": "publicEnquiry",
+          "region": "asia-south1"
+        }
+      }
+    ],
     "headers": [
       {
         "source": "**/*.@(js|css|wasm)",

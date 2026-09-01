@@ -4,6 +4,7 @@ import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import AnimatedSection from "@/components/AnimatedSection";
+import { ENQUIRY_FORM_SLUG, readAttribution } from "@/lib/attribution";
 import {
   Mail,
   Phone,
@@ -18,6 +19,62 @@ import {
 // Get your free access key at https://web3forms.com
 // Enter support@usebizflow.com to receive form submissions via email
 const WEB3FORMS_ACCESS_KEY = "e5167ec0-8ffb-4b28-a9bd-6ea09ad337e9";
+
+/**
+ * Creates the CRM lead via the publicEnquiry Cloud Function, reached through
+ * the /api/enquiry rewrite in firebase.json.
+ *
+ * This runs *alongside* the Web3Forms email rather than replacing it: if the
+ * CRM write fails the enquiry still reaches a human, so a Firestore outage or
+ * a missing enquiry-form slug can never cost us a lead.
+ */
+async function createCrmLead(formData: FormData): Promise<void> {
+  const attribution = readAttribution();
+  const name = [formData.get("first_name"), formData.get("last_name")]
+    .map((part) => String(part ?? "").trim())
+    .filter(Boolean)
+    .join(" ");
+
+  // "interest" is an enquiry type (Product Demo, Free Trial, ...), not a
+  // product, so it is folded into the note rather than sent as `product`:
+  // publicEnquiry puts `product` straight into the lead's productInterest,
+  // which is a dimension of the CRM's Product Performance report and would
+  // otherwise gain fake products that absorb a share of won revenue.
+  const interest = String(formData.get("interest") ?? "").trim();
+  const body = String(formData.get("message") ?? "").trim();
+
+  const payload: Record<string, string> = {
+    // Identifies our tenant; the channel comes from the UTM tags below.
+    slug: ENQUIRY_FORM_SLUG,
+    name,
+    phone: String(formData.get("phone") ?? ""),
+    email: String(formData.get("email") ?? ""),
+    company: String(formData.get("company") ?? ""),
+    message: interest ? `Interest: ${interest}\n\n${body}` : body,
+    // publicEnquiry's honeypot field, mirroring the form's own bot check so a
+    // bot that trips one trips both.
+    website: formData.get("botcheck") ? "bot" : "",
+  };
+
+  const utm: ReadonlyArray<readonly [string, string | undefined]> = [
+    ["utm_source", attribution.utmSource],
+    ["utm_medium", attribution.utmMedium],
+    ["utm_campaign", attribution.utmCampaign],
+    ["utm_content", attribution.utmContent],
+    ["utm_term", attribution.utmTerm],
+    ["landing_path", attribution.landingPath],
+    ["referrer", attribution.referrer],
+  ];
+  for (const [key, value] of utm) {
+    if (value) payload[key] = value;
+  }
+
+  await fetch("/api/enquiry", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}
 
 function ContactPageInner() {
   // Prefill from links like /contact?interest=Custom Pricing&modules=CRM,...
@@ -46,14 +103,17 @@ function ContactPageInner() {
     formData.append("from_name", "BizFlow Website");
 
     try {
-      const response = await fetch("https://api.web3forms.com/submit", {
-        method: "POST",
-        body: formData,
-      });
+      // Both submissions go out together, but only the email decides what the
+      // visitor sees — see createCrmLead.
+      const [email] = await Promise.allSettled([
+        fetch("https://api.web3forms.com/submit", {
+          method: "POST",
+          body: formData,
+        }).then((response) => response.json() as Promise<{ success?: boolean }>),
+        createCrmLead(formData),
+      ]);
 
-      const result = await response.json();
-
-      if (result.success) {
+      if (email.status === "fulfilled" && email.value?.success) {
         setSubmitted(true);
       } else {
         setError("Something went wrong. Please try again or email us directly.");
@@ -261,14 +321,18 @@ function ContactPageInner() {
 
                       <div>
                         <label className="block text-sm font-medium text-foreground mb-1.5">
-                          Phone Number
+                          Phone Number *
                         </label>
                         <input
                           type="tel"
                           name="phone"
+                          required
                           className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm text-foreground placeholder-slate-400 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors"
                           placeholder="+91 98765 43210"
                         />
+                        <p className="mt-1.5 text-xs text-muted">
+                          So we can reach you to schedule the demo.
+                        </p>
                       </div>
 
                       <div>
