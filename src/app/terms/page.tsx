@@ -1,10 +1,40 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+const title = "Terms of Service | BizFlow";
+const description =
+  "The terms that govern your use of the BizFlow website and the BizFlow business management platform.";
+const ogImageAlt = "BizFlow terms of service";
+
 export const metadata: Metadata = {
-  title: "Terms of Service | BizFlow",
-  description:
-    "The terms that govern your use of the BizFlow website and the BizFlow business management platform.",
+  title,
+  description,
+  alternates: {
+    canonical: "/terms",
+  },
+  openGraph: {
+    type: "website",
+    siteName: "BizFlow",
+    locale: "en_IN",
+    url: "/terms",
+    title,
+    description,
+    images: [
+      {
+        url: "/og/terms.png",
+        width: 1200,
+        height: 630,
+        type: "image/png",
+        alt: ogImageAlt,
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title,
+    description,
+    images: [{ url: "/og/terms.png", alt: ogImageAlt }],
+  },
 };
 
 const sections = [

@@ -1,10 +1,40 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+const title = "Privacy Policy | BizFlow";
+const description =
+  "How BizFlow collects, uses, and protects your information — covering the website, demo requests, and the BizFlow application.";
+const ogImageAlt = "BizFlow privacy policy";
+
 export const metadata: Metadata = {
-  title: "Privacy Policy | BizFlow",
-  description:
-    "How BizFlow collects, uses, and protects your information — covering the website, demo requests, and the BizFlow application.",
+  title,
+  description,
+  alternates: {
+    canonical: "/privacy",
+  },
+  openGraph: {
+    type: "website",
+    siteName: "BizFlow",
+    locale: "en_IN",
+    url: "/privacy",
+    title,
+    description,
+    images: [
+      {
+        url: "/og/privacy.png",
+        width: 1200,
+        height: 630,
+        type: "image/png",
+        alt: ogImageAlt,
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title,
+    description,
+    images: [{ url: "/og/privacy.png", alt: ogImageAlt }],
+  },
 };
 
 const sections = [
